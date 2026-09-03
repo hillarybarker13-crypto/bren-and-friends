@@ -107,7 +107,12 @@ const isDueSoon = (t: Assignment) => {
   const diff = new Date(`${t.dueDate}T23:59:59`).getTime() - Date.now();
   return diff <= 3 * 24 * 60 * 60 * 1000;
 };
-const timestampMs = (value: any) => value?.toMillis?.() ?? value?.seconds * 1000 ?? 0;
+const timestampMs = (value: any) => {
+  if (!value) return 0;
+  if (typeof value.toMillis === "function") return value.toMillis();
+  if (typeof value.seconds === "number") return value.seconds * 1000;
+  return 0;
+};
 const safeHref = (value?: string) => {
   if (!value) return "";
   try {
@@ -268,7 +273,7 @@ export default function App() {
     e.preventDefault();
     if (!currentUser?.admin || !title.trim() || saving) return;
     setSaving(true);
-    const checklist: ChecklistItem[] = checklistDraft.split("\n").map(x => x.trim()).filter(Boolean).map((text, i) => ({ id: `${Date.now()}-${i}`, text, done: false }));
+    const checklist: ChecklistItem[] = String(checklistDraft).split("\n").map((x: string) => x.trim()).filter(Boolean).map((text: string, i: number) => ({ id: `${Date.now()}-${i}`, text, done: false }));
     try {
       await addDoc(collection(db, COLLECTION), {
         title: title.trim(), description: description.trim(), assignedTo, assignedBy: currentUser.id,
